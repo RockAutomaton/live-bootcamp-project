@@ -1,3 +1,5 @@
+use auth_service::routes::SignupResponse;
+
 use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
@@ -35,19 +37,28 @@ async fn should_return_201_if_valid_input() {
     let app = TestApp::new().await;
 
     let random_email = get_random_email();
-    let test_cases = [serde_json::json!({
-        "email" : random_email,
+    let body = serde_json::json!({
+        "email": random_email,
         "password": "password123",
         "requires2FA": true
-    })];
+    });
+    
+    let expected_response = SignupResponse {
+        message: "User created successfully!".to_owned(),
+    };
 
-    for test_case in test_cases.iter() {
-        let response = app.post_signup(test_case).await; // call `post_signup`
-        assert_eq!(
-            response.status().as_u16(),
-            422,
-            "Failed for input: {:?}",
-            test_case
-        );
-    }
+    let response = app.post_signup(&body).await;
+    assert_eq!(
+        response.status().as_u16(),
+        201,
+        "Failed for input: {:?}",
+        body
+    );
+    
+    let actual_response = response
+        .json::<SignupResponse>()
+        .await
+        .expect("Could not deserialize response body to SignupResponse");
+    
+    assert_eq!(actual_response, expected_response);
 }
