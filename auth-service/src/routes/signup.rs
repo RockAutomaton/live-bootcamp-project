@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{app_state::AppState, domain::{user, AuthAPIError, User}};
+use crate::{app_state::AppState, domain::{AuthAPIError, User}};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
@@ -28,7 +28,7 @@ pub async fn signup(
     let mut user_store = state.user_store.write().await;
     
     match user_store.get_user(&user.email) {
-        Ok(user) => return Err(AuthAPIError::UserAlreadyExists),
+        Ok(_) => return Err(AuthAPIError::UserAlreadyExists),
         Err(_) => {} // User doesn't exist, continue with signup
     }
 
