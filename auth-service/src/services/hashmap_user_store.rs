@@ -61,11 +61,7 @@ mod tests {
     #[tokio::test]
     async fn test_add_user() {
         let mut store = HashmapUserStore::default();
-        let user = User {
-            email: "test@example.com".to_string(),
-            password: "password123".to_string(),
-            requires_2fa: true
-        };
+        let user = User::new("test@example.com".to_string(), "password123".to_string(), true );
 
         // Test adding a new user
         let result = store.add_user(user.clone());
@@ -79,11 +75,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_user() {
         let mut store = HashmapUserStore::default();
-        let user = User {
-            email: "test@example.com".to_string(),
-            password: "password123".to_string(),
-            requires_2fa: true
-        };
+        let user = User::new("test@example.com".to_string(), "password123".to_string(), true );
+
 
         // Add a user first
         let _ = store.add_user(user.clone());

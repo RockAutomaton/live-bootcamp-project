@@ -9,7 +9,7 @@ pub struct User {
 }
 
 impl User {
-    fn new(email: String, password: String, requires_2fa: bool) -> User {
+    pub fn new(email: String, password: String, requires_2fa: bool) -> User {
         User {
             email: email,
             password: password,
