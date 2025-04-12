@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{app_state::AppState, domain::{data_stores::UserStore, *}};
+use crate::{app_state::AppState, domain::*};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
