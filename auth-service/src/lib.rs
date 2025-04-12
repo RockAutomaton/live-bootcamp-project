@@ -11,6 +11,8 @@ use std::error::Error;
 use tower_http::services::ServeDir;
 
 pub mod routes;
+pub mod services;
+pub mod domain;
 
 pub struct Application {
     server: Serve<Router, Router>,
@@ -18,10 +20,6 @@ pub struct Application {
     // so we have access to it in tests.
     pub address: String,
 }
-
-// Takes email, password, and 2fa code as input
-
-
 
 
 
