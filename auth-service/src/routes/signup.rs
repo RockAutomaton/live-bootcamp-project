@@ -10,18 +10,20 @@ pub async fn signup(
 ) -> Result<impl IntoResponse, AuthAPIError>{
     // Create a new `User` instance using data in the `request`
 
-    let email = request.email;
-    let password = request.password;
+    // let email = Email::parse(&request.email).unwrap();
+    // let password = Password::parse(&request.password).unwrap();
 
     // Email validation: Check if it's empty or doesn't contain '@'
-    if email.is_empty() || !email.contains('@') {
-        return Err(AuthAPIError::InvalidCredentials);
-    }
+    let email = match Email::parse(&request.email) {
+        Ok(email) => email,
+        Err(_) => return Err(AuthAPIError::InvalidCredentials),
+    };
 
     // Password validation: Check if it's less than 8 characters
-    if password.len() < 8 {
-        return Err(AuthAPIError::InvalidCredentials);
-    }
+    let password= match Password::parse(&request.password) {
+        Ok(password) => password,
+        Err(_) => return Err(AuthAPIError::InvalidCredentials)
+    };
 
     let user = User::new(email, password, request.requires_2fa);
 

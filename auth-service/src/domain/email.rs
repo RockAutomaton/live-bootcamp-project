@@ -1,14 +1,14 @@
 use validator::validate_email;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct Email(String);
+pub struct Email(pub String);
 
 impl Email {
     /// Parses a string slice into an `Email`.
     ///
     /// Returns `Ok(Email)` if the string is a valid email address,
     /// and `Err(&'static str)` otherwise.
-    pub fn parse(email_string: &str) -> Result<(), &'static str> {
+    pub fn parse(email_string: &str) -> Result<Self, &'static str> {
         if email_string.is_empty() {
             return Err("Email cannot be empty.");
         }
@@ -21,7 +21,7 @@ impl Email {
             return Err("Invalid email format.");   
         }
 
-        Ok(())
+        Ok(Email(email_string.to_string()))
     }
 }
 
@@ -37,7 +37,7 @@ mod tests {
     #[test]
     fn test_parse_valid_email() {
         let email = "test@example.com";
-        assert_eq!(Email::parse(email), Ok(()));
+        assert!(Email::parse(email).is_ok());
     }
 
     #[test]
@@ -67,7 +67,7 @@ mod tests {
     #[test]
     fn test_parse_complex_valid_email() {
         let email = "test.user+tag-123@sub.example.com";
-        assert_eq!(Email::parse(email), Ok(()));
+        assert!(Email::parse(email).is_ok());
     }
 
     #[test]
