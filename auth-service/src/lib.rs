@@ -1,17 +1,20 @@
 // This struct encapsulates our application-related logic.
 use axum::{
-    http::StatusCode,
+    http::{Method, StatusCode},
     response::{IntoResponse, Response},
     routing::post,
     serve::Serve,
     Json, Router,
 };
 
+use std::sync::Arc;
+
+use tower_http::{cors::CorsLayer, services::ServeDir};
+
 use domain::AuthAPIError;
 use serde::{Deserialize, Serialize};
 
 use std::error::Error;
-use tower_http::services::ServeDir;
 use app_state::AppState;
 
 pub mod app_state;
@@ -29,8 +32,21 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
-        use std::sync::Arc;
+        
         let shared_state = Arc::new(app_state);
+
+        let allowed_origins = [
+            "http://localhost:8000".parse()?,
+            "http://24.144.106.178:8000".parse()?,
+        ];
+
+        let cors = CorsLayer::new()
+        // Allow GET and POST requests
+        .allow_methods([Method::GET, Method::POST])
+        // Allow cookies to be included in requests
+        .allow_credentials(true)
+        .allow_origin(allowed_origins);
+
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(routes::signup))
@@ -38,7 +54,8 @@ impl Application {
             .route("/logout", post(routes::logout))
             .route("/verify-2fa", post(routes::verify_2fa))
             .route("/verify-token", post(routes::verify_token))
-            .with_state(shared_state);
+            .with_state(shared_state)
+            .layer(cors);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -66,6 +83,8 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
             AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Incorrect credentials"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid JWT token"),
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "JWT cookie missing"),
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
