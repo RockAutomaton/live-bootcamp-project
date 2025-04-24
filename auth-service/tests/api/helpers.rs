@@ -1,5 +1,6 @@
 use auth_service::{
     app_state::AppState, services::hashmap_user_store::HashmapUserStore, utils::constants::test,
+    services::hashset_banned_token_store::HashsetBannedTokenStore,
     Application,
 };
 use reqwest::Client;
@@ -18,7 +19,8 @@ pub struct TestApp {
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
-        let app_state = AppState::new(user_store);
+        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
+        let app_state = AppState::new(user_store, banned_token_store);
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
             .expect("Failed to build app");

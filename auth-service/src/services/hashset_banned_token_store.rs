@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::domain::data_stores::*;
 
 #[derive(Default)]
-struct HashsetBannedTokenStore {
+pub struct HashsetBannedTokenStore {
     banned_tokens: HashSet<String>
 }
 
