@@ -11,19 +11,12 @@ pub struct HashsetBannedTokenStore {
 impl BannedTokenStore for HashsetBannedTokenStore {
     
     async fn store_token(&mut self, token: String) -> Result<(), BannedTokenStoreError> {
-        let inserted = self.banned_tokens.insert(token);
-        if inserted {
-            Ok(())
-        } else {
-            Err(BannedTokenStoreError::UnexpectedError)
-        }
+        self.banned_tokens.insert(token);
+        Ok(())
     }
 
     async fn check_banned_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>{
-        if self.banned_tokens.contains(token) { 
-            return Err(BannedTokenStoreError::BannedTokenError);
-        }
-        Ok(true)
+        Ok(self.banned_tokens.contains(token))
     }
 }
 
@@ -42,20 +35,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_store_token_duplicate() {
-        let mut store = HashsetBannedTokenStore::default();
-        let token = "token123".to_string();
-        let _ = store.store_token(token.clone()).await;
-        let result = store.store_token(token.clone()).await;
-        assert!(matches!(result, Err(BannedTokenStoreError::UnexpectedError)));
-    }
-
-    #[tokio::test]
     async fn test_check_banned_token_not_banned() {
         let store = HashsetBannedTokenStore::default();
         let token = "token123".to_string();
         let result = store.check_banned_token(&token).await;
-        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), false);
     }
 
     #[tokio::test]
@@ -64,8 +48,6 @@ mod tests {
         let token = "token123".to_string();
         let _ = store.store_token(token.clone()).await;
         let result = store.check_banned_token(&token).await;
-        assert!(matches!(result, Err(BannedTokenStoreError::BannedTokenError)));
+        assert_eq!(result.unwrap(), true);
     }
-
-
 }

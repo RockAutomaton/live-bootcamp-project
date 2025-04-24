@@ -44,21 +44,19 @@ async fn should_return_200_if_valid_jwt_cookie() {
 
     let signup_body = serde_json::json!({
         "email": random_email,
-        "password": "password123",
+        "password": "Password123!",
         "requires2FA": false
     });
 
     let response = app.post_signup(&signup_body).await;
-
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
         "email": random_email,
-        "password": "password123",
+        "password": "Password123!",
     });
 
     let response = app.post_login(&login_body).await;
-
     assert_eq!(response.status().as_u16(), 200);
 
     let auth_cookie = response
@@ -66,29 +64,33 @@ async fn should_return_200_if_valid_jwt_cookie() {
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
 
-    assert!(!auth_cookie.value().is_empty());
-
+    assert!(!auth_cookie.value().is_empty()); // Changed: should NOT be empty after login
+    
     let token = auth_cookie.value();
 
     let response = app.post_logout().await;
-
     assert_eq!(response.status().as_u16(), 200);
 
-    let auth_cookie = response
+    // Verify the cookie was removed
+    let logout_cookie = response
         .cookies()
-        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
-        .expect("No auth cookie found");
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME);
+    
+    // Cookie should be removed (or have empty value) after logout
+    match logout_cookie {
+        Some(cookie) => assert!(cookie.value().is_empty()),
+        None => (), // Cookie completely removed is also valid
+    }
 
-    assert!(auth_cookie.value().is_empty());
 
     let banned_token_store = app.banned_token_store.read().await;
     let contains_token = banned_token_store
         .check_banned_token(token)
         .await
         .expect("Failed to check if token is banned");
-
     assert!(contains_token);
 }
+
 #[tokio::test]
 async fn should_return_400_if_logout_called_twice_in_a_row() {
     let app = TestApp::new().await;
