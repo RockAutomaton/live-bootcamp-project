@@ -1,3 +1,5 @@
+use std::string;
+
 use crate::domain::User;
 use crate::domain::Password;
 use crate::domain::Email;
@@ -14,5 +16,17 @@ pub enum UserStoreError {
     UserAlreadyExists,
     UserNotFound,
     InvalidCredentials,
+    UnexpectedError,
+}
+
+#[async_trait::async_trait]
+pub trait BannedTokenStore {
+    async fn store_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
+    async fn check_banned_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
+}
+
+#[derive(Debug, PartialEq)]
+pub enum BannedTokenStoreError {
+    BannedTokenError,
     UnexpectedError,
 }
