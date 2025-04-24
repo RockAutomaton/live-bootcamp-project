@@ -87,3 +87,32 @@ async fn should_return_401_if_invalid_token() {
     // Assert that we got a 401 response indicating the token is invalid
     assert_eq!(401, token_response.status().as_u16());
 }
+
+
+#[tokio::test]
+async fn should_return_401_if_banned_token() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+    let body = serde_json::json!({
+        "email": random_email,
+        "password": "Password123!",
+        "requires2FA": true
+    });
+
+    let _ = app.post_signup(&body).await; // Will work
+
+    let login_response1 = app.post_login(&body).await;
+    
+    let auth_cookie = login_response1
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    app.post_logout().await;
+    let token_request_body = serde_json::json!({
+        "token": auth_cookie.value()
+    });
+    let verify_result = app.post_verify_token(&token_request_body).await;
+    assert_eq!(401, verify_result.status().as_u16());
+
+}
