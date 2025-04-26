@@ -1,5 +1,5 @@
 use crate::helpers::{get_random_email, TestApp};
-use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
+use auth_service::{routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 use axum::http::response;
 
 #[tokio::test]
@@ -64,7 +64,7 @@ async fn should_return_401_if_incorrect_credentials() {
     let body = serde_json::json!({
         "email": random_email,
         "password": "Password123!",
-        "requires2FA": true
+        "requires2FA": false
     });
 
     // Create a user 
@@ -75,7 +75,7 @@ async fn should_return_401_if_incorrect_credentials() {
     let body = serde_json::json!({
         "email": random_email,
         "password": "Password456!",
-        "requires2FA": true
+        "requires2FA": false
     });
 
     let response = app.post_login(&body).await;
@@ -119,4 +119,26 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+    let body = serde_json::json!({
+        "email": random_email,
+        "password": "Password123!",
+        "requires2FA": true
+    });
+    let _ = app.post_signup(&body).await; // Will work
+    let response = app.post_login(&body).await;
+    assert_eq!(response.status().as_u16(), 206);
+    assert_eq!(
+        response
+            .json::<TwoFactorAuthResponse>()
+            .await
+            .expect("Could not deserialize response body to TwoFactorAuthResponse")
+            .message,
+        "2FA required".to_owned()
+    );
 }

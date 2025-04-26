@@ -28,7 +28,7 @@ async fn should_return_200_valid_token() {
     let body = serde_json::json!({
         "email": random_email,
         "password": "Password123!",
-        "requires2FA": true
+        "requires2FA": false
     });
 
     let _ = app.post_signup(&body).await; // Will work
@@ -55,7 +55,7 @@ async fn should_return_401_if_invalid_token() {
     let body = serde_json::json!({
         "email": random_email,
         "password": "Password123!",
-        "requires2FA": true
+        "requires2FA": false
     });
 
     let _ = app.post_signup(&body).await; // Will work
@@ -96,7 +96,7 @@ async fn should_return_401_if_banned_token() {
     let body = serde_json::json!({
         "email": random_email,
         "password": "Password123!",
-        "requires2FA": true
+        "requires2FA": false
     });
 
     let _ = app.post_signup(&body).await; // Will work
