@@ -37,15 +37,6 @@ pub async fn login(
         Err(_) => return (jar, Err(AuthAPIError::IncorrectCredentials)),
     };
 
-    // let auth_cookie = match generate_auth_cookie(&user.email) {
-    //     Ok(cookie) => cookie,
-    //     Err(_) => return (jar, Err(AuthAPIError::UnexpectedError)),
-    // };
-
-    // let updated_jar = jar.add(auth_cookie);
-
-    // (updated_jar, Ok(StatusCode::OK.into_response()))
-
     // Handle request based on user's 2FA configuration
     match user.requires_2fa {
         true => handle_2fa(&user.email, &state, jar).await,
@@ -76,6 +67,18 @@ async fn handle_2fa(
         return (jar, Err(AuthAPIError::UnexpectedError));
     }
 
+    let email_client = state.email_client.read().await;
+    if email_client
+        .send_email(
+            email,
+            "Your 2FA code",
+            &format!("Your 2FA code is: {}", two_fa_code.as_ref().to_string()),
+        )
+        .await
+        .is_err()
+    {
+        return (jar, Err(AuthAPIError::UnexpectedError));
+    }
 
     let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
         message: "2FA required".to_owned(),

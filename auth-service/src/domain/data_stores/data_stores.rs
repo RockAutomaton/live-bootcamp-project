@@ -1,5 +1,3 @@
-use std::string;
-
 use uuid::Uuid;
 
 use crate::domain::User;
@@ -105,5 +103,12 @@ impl Default for TwoFACode {
         let code = rand::random::<u32>() % 1_000_000; // Generate a random number between 0 and 999999
         let code_str = format!("{:06}", code); // Format it as a 6-digit string
         TwoFACode(code_str) // Return the 6-digit code
+    }
+}
+
+// Implementing AsRef<str> for TwoFACode to allow easy conversion to &str
+impl AsRef<str> for TwoFACode {
+    fn as_ref(&self) -> &str {
+        &self.0
     }
 }
