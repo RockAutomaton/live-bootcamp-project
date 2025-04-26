@@ -8,3 +8,4 @@ pub use user::*;
 pub use error::*;
 pub use email::*;
 pub use password::*;
+pub use data_stores::*;

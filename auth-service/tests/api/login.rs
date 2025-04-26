@@ -1,6 +1,11 @@
 use crate::helpers::{get_random_email, TestApp};
-use auth_service::{routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse};
-use axum::http::response;
+use auth_service::{
+    domain::{Email},
+    domain::data_stores::TwoFACodeStore,
+    routes::TwoFactorAuthResponse,
+    utils::constants::JWT_COOKIE_NAME,
+    ErrorResponse,
+};
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
@@ -141,4 +146,24 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
             .message,
         "2FA required".to_owned()
     );
+
+    // TODO: assert that `json_body.login_attempt_id` is stored inside `app.two_fa_code_store`
+    let response = app.post_login(&body).await;
+    let login_attempt_id = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to TwoFactorAuthResponse")
+        .login_attempt_id;
+    let stored_code = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(&Email::parse(&random_email).unwrap())
+        .await
+        .expect("Failed to get code from store");
+
+    // get the login attempt ID from the stored code as a string
+    let stored_login_attempt_id = stored_code.0.as_ref().to_string();
+    assert_eq!(stored_login_attempt_id, login_attempt_id);
+
 }
