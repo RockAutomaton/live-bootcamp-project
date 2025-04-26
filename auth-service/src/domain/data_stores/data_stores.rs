@@ -54,6 +54,7 @@ pub enum TwoFACodeStoreError {
     UnexpectedError,
 }
 
+#[derive(serde::Serialize)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct LoginAttemptId(String);
 
