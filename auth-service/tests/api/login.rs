@@ -147,7 +147,6 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         "2FA required".to_owned()
     );
 
-    // TODO: assert that `json_body.login_attempt_id` is stored inside `app.two_fa_code_store`
     let response = app.post_login(&body).await;
     let login_attempt_id = response
         .json::<TwoFactorAuthResponse>()
