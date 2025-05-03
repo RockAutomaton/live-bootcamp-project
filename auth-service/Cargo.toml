@@ -9,6 +9,7 @@ edition = "2021"
 axum = "0.7.4"
 tokio = { version = "1.36", features = ["full"] }
 tower-http = { version = "0.5.0", features = ["fs", "cors"] }
+sqlx = { version = "0.8", features = [ "runtime-tokio-rustls", "postgres", "migrate"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.7.0", features = ["v4", "serde"] }
@@ -20,6 +21,7 @@ chrono = "0.4.35"
 dotenvy = "0.15.7"
 lazy_static = "1.4.0"
 rand = "0.8.5"
+argon2 = { version = "0.5.3", features = ["std"] }
 
 [dev-dependencies]
 fake = "=2.3.0"

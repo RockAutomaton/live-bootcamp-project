@@ -1,4 +1,4 @@
 tests.md
 rustc-ice-*
 /.idea/*
-
+.env
