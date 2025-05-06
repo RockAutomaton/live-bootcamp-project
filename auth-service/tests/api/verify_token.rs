@@ -5,7 +5,7 @@ use crate::helpers::{get_random_email, TestApp};
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
     
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let body = serde_json::json!({
         "ewqe": ""
     });
@@ -17,13 +17,14 @@ async fn should_return_422_if_malformed_input() {
         "Failed for input: {:?}",
         response
     );
+    app.clean_up().await;
 }
 
 
 
 #[tokio::test]
 async fn should_return_200_valid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
     let body = serde_json::json!({
         "email": random_email,
@@ -46,11 +47,12 @@ async fn should_return_200_valid_token() {
 
     let token_response = app.post_verify_token(&token_request_body).await;
     assert_eq!(200, token_response.status().as_u16());
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
     let body = serde_json::json!({
         "email": random_email,
@@ -86,12 +88,13 @@ async fn should_return_401_if_invalid_token() {
     
     // Assert that we got a 401 response indicating the token is invalid
     assert_eq!(401, token_response.status().as_u16());
+    app.clean_up().await;
 }
 
 
 #[tokio::test]
 async fn should_return_401_if_banned_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
     let body = serde_json::json!({
         "email": random_email,
@@ -114,5 +117,5 @@ async fn should_return_401_if_banned_token() {
     });
     let verify_result = app.post_verify_token(&token_request_body).await;
     assert_eq!(401, verify_result.status().as_u16());
-
+    app.clean_up().await;
 }

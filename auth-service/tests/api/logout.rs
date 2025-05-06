@@ -7,17 +7,17 @@ use serde_json::json;
 
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     // Do not set the JWT cookie
     let response = app.post_logout().await;
     assert_eq!(response.status(), 400);
-
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     // add invalid cookie
     app.cookie_jar.add_cookie_str(
@@ -31,6 +31,7 @@ async fn should_return_401_if_invalid_token() {
     let response = app.post_logout().await;
 
     assert_eq!(response.status(), 401);
+    app.clean_up().await;
 }
 
 
@@ -38,7 +39,7 @@ async fn should_return_401_if_invalid_token() {
 
 #[tokio::test]
 async fn should_return_200_if_valid_jwt_cookie() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -89,11 +90,13 @@ async fn should_return_200_if_valid_jwt_cookie() {
         .await
         .expect("Failed to check if token is banned");
     assert!(contains_token);
+    drop(banned_token_store); // Drop the read lock before cleanup
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_logout_called_twice_in_a_row() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     // Register and login to get a valid JWT cookie
     // Register and login to get a valid JWT cookie
@@ -120,4 +123,5 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
     // Second logout should fail with 400 (no JWT cookie)
     let response2 = app.post_logout().await;
     assert_eq!(response2.status(), 400);
+    app.clean_up().await;
 }

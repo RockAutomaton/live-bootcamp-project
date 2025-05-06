@@ -16,7 +16,7 @@ async fn should_return_422_if_malformed_input() {
     //     "2FACode": "string"
     //   }
 
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let body = serde_json::json!({
         "login_attempt_id": "invalid",
@@ -24,11 +24,12 @@ async fn should_return_422_if_malformed_input() {
     });
     let response = app.post_verify_2fa(&body).await; 
     assert_eq!(response.status(), 422);
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let body = serde_json::json!({
         "email": "invalid",
@@ -37,11 +38,12 @@ async fn should_return_400_if_invalid_input() {
     });
     let response = app.post_verify_2fa(&body).await; 
     assert_eq!(response.status(), 400);
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     // Create a user with a random email and password
     let email = get_random_email();
@@ -74,12 +76,13 @@ async fn should_return_401_if_incorrect_credentials() {
 
     let response = app.post_verify_2fa(&body).await;
     assert_eq!(response.status(), 401);
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_old_code() {
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail. 
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let email: Email = Email::parse(get_random_email().as_ref()).unwrap();
     let password = "Password123!";
     let login_body = serde_json::json!({
@@ -106,13 +109,13 @@ async fn should_return_401_if_old_code() {
     });
     let response = app.post_verify_2fa(&body).await;
     assert_eq!(response.status(), 401);
-
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_same_code_twice() {    
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail. 
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let email: Email = Email::parse(get_random_email().as_ref()).unwrap();
     let password = "Password123!";
     let login_body = serde_json::json!({
@@ -133,8 +136,9 @@ async fn should_return_401_if_same_code_twice() {
         "loginAttemptId": login_attempt_id,
         "2FACode": code.as_ref()
     });
-    let login_response = app.post_login(&login_body).await; 
+    let _login_response = app.post_login(&login_body).await; 
 
     let response = app.post_verify_2fa(&body).await;
     assert_eq!(response.status(), 401);
+    app.clean_up().await;
 }
