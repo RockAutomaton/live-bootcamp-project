@@ -21,12 +21,12 @@ pub async fn verify_2fa(
         Err(_) => return (jar, AuthAPIError::InvalidCredentials.into_response()),
     };
 
-    let login_attempt_id = match LoginAttemptId::parse(request.login_attempt_id) {
+    let login_attempt_id = match LoginAttemptId::parse(&request.login_attempt_id) {
         Ok(login_attempt_id) => login_attempt_id,
         Err(_) => return (jar, AuthAPIError::InvalidCredentials.into_response()),
     };
 
-    let two_fa_code = match TwoFACode::parse(request.code) {
+    let two_fa_code = match TwoFACode::parse(&request.code) {
         Ok(two_fa_code) => two_fa_code,
         Err(_) => return (jar, AuthAPIError::InvalidCredentials.into_response()),
     };

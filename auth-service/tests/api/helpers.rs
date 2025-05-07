@@ -7,7 +7,7 @@ use auth_service::{
     app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, get_postgres_pool, get_redis_client, services::{data_stores::{
         hashmap_two_fa_code_store::HashmapTwoFACodeStore,
         hashset_banned_token_store::HashsetBannedTokenStore,
-        postgres_user_store::PostgresUserStore, redis_banned_token_store::RedisBannedTokenStore,
+        postgres_user_store::PostgresUserStore, redis_banned_token_store::RedisBannedTokenStore, redis_two_fa_code_store::RedisTwoFACodeStore,
     }, mock_email_client::MockEmailClient}, utils::constants::{test, DATABASE_URL, REDIS_HOST_NAME}, Application
 };
 
@@ -32,7 +32,8 @@ impl TestApp {
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
         // let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(Arc::new(RwLock::new(configure_redis())))));
-        let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default())); // New!
+        // let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default())); // New!
+        let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(Arc::new(RwLock::new(configure_redis())))));
         let email_client = Arc::new(RwLock::new(MockEmailClient)); // New!
         let app_state = AppState::new(
             user_store,

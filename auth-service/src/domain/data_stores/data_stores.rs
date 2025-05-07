@@ -59,11 +59,11 @@ pub enum TwoFACodeStoreError {
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, String> {
+    pub fn parse(id: &String) -> Result<Self, String> {
         // Use the `parse_str` function from the `uuid` crate to ensure `id` is a valid UUID
         Uuid::parse_str(&id)
             .map_err(|_| "Invalid LoginAttemptId".to_string())
-            .map(|_| LoginAttemptId(id))
+            .map(|_| LoginAttemptId(id.clone()))
     }
 }
 
@@ -87,10 +87,10 @@ impl AsRef<str> for LoginAttemptId { // Implementing AsRef<str> for LoginAttempt
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, String> {
+    pub fn parse(code: &String) -> Result<Self, String> {
         // Ensure `code` is a valid 6-digit code
         if code.len() == 6 && code.chars().all(|c| c.is_digit(10)) { // Check if all characters are digits and length is 6
-            Ok(TwoFACode(code))
+            Ok(TwoFACode(code.clone()))
         } else {
             Err("Invalid TwoFACode".to_string())
         }

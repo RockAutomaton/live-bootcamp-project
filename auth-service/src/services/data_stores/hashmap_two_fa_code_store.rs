@@ -48,7 +48,7 @@ mod tests {
         let mut store = HashmapTwoFACodeStore::default();
         let email = Email::parse(&"test@email.net".to_string()).unwrap();
         let login_attempt_id = LoginAttemptId::default();
-        let code = TwoFACode::parse("123456".to_string()).unwrap();
+        let code = TwoFACode::parse(&"123456".to_string()).unwrap();
         store
             .add_code(email.clone(), login_attempt_id.clone(), code.clone())
             .await
@@ -63,7 +63,7 @@ mod tests {
         let mut store = HashmapTwoFACodeStore::default();
         let email = Email::parse(&"remove@email.net".to_string()).unwrap();
         let login_attempt_id = LoginAttemptId::default();
-        let code = TwoFACode::parse("654321".to_string()).unwrap();
+        let code = TwoFACode::parse(&"654321".to_string()).unwrap();
         store
             .add_code(email.clone(), login_attempt_id.clone(), code.clone())
             .await
@@ -86,14 +86,14 @@ mod tests {
         let mut store = HashmapTwoFACodeStore::default();
         let email = Email::parse(&"overwrite@email.net".to_string()).unwrap();
         let login_attempt_id1 = LoginAttemptId::default();
-        let code1 = TwoFACode::parse("111111".to_string()).unwrap();
+        let code1 = TwoFACode::parse(&"111111".to_string()).unwrap();
         store
             .add_code(email.clone(), login_attempt_id1.clone(), code1.clone())
             .await
             .unwrap();
 
         let login_attempt_id2 = LoginAttemptId::default();
-        let code2 = TwoFACode::parse("222222".to_string()).unwrap();
+        let code2 = TwoFACode::parse(&"222222".to_string()).unwrap();
         store
             .add_code(email.clone(), login_attempt_id2.clone(), code2.clone())
             .await

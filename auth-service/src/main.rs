@@ -1,8 +1,6 @@
 use auth_service::{
     app_state::AppState, get_redis_client, services::data_stores::{
-        hashmap_two_fa_code_store::HashmapTwoFACodeStore,
-        hashset_banned_token_store::HashsetBannedTokenStore,
-        postgres_user_store::PostgresUserStore, redis_banned_token_store::RedisBannedTokenStore,
+        postgres_user_store::PostgresUserStore, redis_banned_token_store::RedisBannedTokenStore, redis_two_fa_code_store::RedisTwoFACodeStore,
     }, utils::constants::{prod, REDIS_HOST_NAME}, Application
 };
 use auth_service::{
@@ -19,7 +17,8 @@ async fn main() {
     let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
     // let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
     let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(Arc::new(RwLock::new(configure_redis())))));
-    let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+    // let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+    let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(Arc::new(RwLock::new(configure_redis())))));
     let email_client = Arc::new(RwLock::new(MockEmailClient));
     let app_state = AppState::new(
         user_store,
