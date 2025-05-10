@@ -6,6 +6,7 @@ use auth_service::{
     ErrorResponse,
 };
 use secrecy::Secret;
+use wiremock::{matchers::{method, path}, Mock, ResponseTemplate};
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
     let mut app = TestApp::new().await;
@@ -138,11 +139,21 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         "password": "Password123!",
         "requires2FA": true
     });
+
+    // Set up email server mock
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
+
     let _ = app.post_signup(&body).await; // Will work
     
     // Single login attempt
     let response = app.post_login(&body).await;
     assert_eq!(response.status().as_u16(), 206);
+
     let login_attempt_id = response
         .json::<TwoFactorAuthResponse>()
         .await

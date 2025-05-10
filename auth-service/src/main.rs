@@ -1,11 +1,12 @@
 use auth_service::{
-    app_state::AppState, get_redis_client, services::data_stores::{
+    app_state::AppState, domain::Email, get_redis_client, services::{data_stores::{
         postgres_user_store::PostgresUserStore, redis_banned_token_store::RedisBannedTokenStore, redis_two_fa_code_store::RedisTwoFACodeStore,
-    }, utils::{constants::{prod, REDIS_HOST_NAME}, tracing::init_tracing}, Application
+    }, postmark_email_client::PostmarkEmailClient}, utils::{constants::{prod, POSTMARK_AUTH_TOKEN, REDIS_HOST_NAME}, tracing::init_tracing}, Application
 };
 use auth_service::{
     get_postgres_pool, services::mock_email_client::MockEmailClient, utils::constants::DATABASE_URL,
 };
+use reqwest::Client;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -21,7 +22,8 @@ async fn main() {
     let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(Arc::new(RwLock::new(configure_redis())))));
     // let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
     let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(Arc::new(RwLock::new(configure_redis())))));
-    let email_client = Arc::new(RwLock::new(MockEmailClient));
+    // let email_client = Arc::new(RwLock::new(MockEmailClient));
+    let email_client = Arc::new(RwLock::new(configure_postmark_email_client()));
     let app_state = AppState::new(
         user_store,
         banned_token_store,
@@ -55,4 +57,18 @@ fn configure_redis() -> redis::Connection {
         .expect("Failed to get Redis client")
         .get_connection()
         .expect("Failed to get Redis connection")
+}
+
+fn configure_postmark_email_client() -> PostmarkEmailClient {
+    let http_client = Client::builder()
+        .timeout(prod::email_client::TIMEOUT)
+        .build()
+        .expect("Failed to build HTTP client");
+
+    PostmarkEmailClient::new(
+        prod::email_client::BASE_URL.to_owned(),
+        Email::parse(prod::email_client::SENDER.to_owned().into()).unwrap(),
+        POSTMARK_AUTH_TOKEN.to_owned(),
+        http_client,
+    )
 }
