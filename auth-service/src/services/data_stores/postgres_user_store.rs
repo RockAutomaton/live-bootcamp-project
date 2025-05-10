@@ -23,7 +23,7 @@ impl PostgresUserStore {
 
 #[async_trait::async_trait]
 impl UserStore for PostgresUserStore {
-
+    #[tracing::instrument(name = "Validating user credentials in PostgreSQL", skip_all)]
     async fn validate_user(&self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
         if self.get_user(email).await.is_err() {
             return Err(UserStoreError::UserNotFound);
@@ -46,6 +46,7 @@ impl UserStore for PostgresUserStore {
         }
     }
 
+    #[tracing::instrument(name = "Retrieving user from PostgreSQL", skip_all)]
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         let query = sqlx::query!(
             "SELECT email, password_hash, requires_2fa FROM users WHERE email = $1",
@@ -60,7 +61,7 @@ impl UserStore for PostgresUserStore {
             requires_2fa: user.requires_2fa,
         })
     }
-
+    #[tracing::instrument(name = "Adding user to PostgreSQL", skip_all)]
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
         // Hash the password
         let password_hash = compute_password_hash(user.password.as_ref().to_string())
@@ -79,37 +80,50 @@ impl UserStore for PostgresUserStore {
     }
 }
 
-
+#[tracing::instrument(name = "Verify password hash", skip_all)] // New!
 async fn verify_password_hash(
     expected_password_hash: String,
     password_candidate: String,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    // This line retrieves the current span from the tracing context. 
+    // The span represents the execution context for the compute_password_hash function.
+    let current_span: tracing::Span = tracing::Span::current(); // New!
     let result = tokio::task::spawn_blocking(move || {
-        let expected_password_hash = PasswordHash::new(&expected_password_hash)
-            .map_err(|e| Box::<dyn Error + Send + Sync>::from(e.to_string()))?;
-        
-        Argon2::default()
-            .verify_password(password_candidate.as_bytes(), &expected_password_hash)
-            .map_err(|e| Box::<dyn Error + Send + Sync>::from(e.to_string()))
-    }).await
-    .map_err(|e| Box::<dyn Error + Send + Sync>::from(e.to_string()))??;
+        // This code block ensures that the operations within the closure are executed within the context of the current span. 
+        // This is especially useful for tracing operations that are performed in a different thread or task, such as within tokio::task::spawn_blocking.
+        current_span.in_scope(|| { // New!
+            let expected_password_hash: PasswordHash<'_> =
+                PasswordHash::new(&expected_password_hash)?;
 
-    Ok(())
+            Argon2::default()
+                .verify_password(password_candidate.as_bytes(), &expected_password_hash)
+                .map_err(|e| e.into())
+        })
+    })
+    .await;
+
+    result?
 }
-
+#[tracing::instrument(name = "Computing password hash", skip_all)]
 async fn compute_password_hash(password: String) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let password_hash = tokio::task::spawn_blocking(move || {
-        let salt: SaltString = SaltString::generate(&mut rand::thread_rng());
-        Argon2::new(
-            Algorithm::Argon2id,
-            Version::V0x13,
-            Params::new(15000, 2, 1, None)
-                .map_err(|e| Box::<dyn Error + Send + Sync>::from(e.to_string())).unwrap()
-        )
-        .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| Box::<dyn Error + Send + Sync>::from(e.to_string())).unwrap()
-        .to_string()
-    }).await.unwrap(); 
+    let current_span: tracing::Span = tracing::Span::current(); // New!
+    let result = tokio::task::spawn_blocking(move || {
+        // This code block ensures that the operations within the closure are executed within the context of the current span. 
+        // This is especially useful for tracing operations that are performed in a different thread or task, such as within tokio::task::spawn_blocking.
+        current_span.in_scope(|| { // New!
+            let salt: SaltString = SaltString::generate(&mut rand::thread_rng());
+            let password_hash = Argon2::new(
+                Algorithm::Argon2id,
+                Version::V0x13,
+                Params::new(15000, 2, 1, None)?,
+            )
+            .hash_password(password.as_bytes(), &salt)?
+            .to_string();
 
-    Ok(password_hash)
+            Ok(password_hash)
+        })
+    })
+    .await;
+
+    result?
 }

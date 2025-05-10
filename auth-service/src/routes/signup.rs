@@ -4,14 +4,11 @@ use crate::{app_state::AppState, domain::*};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
+#[tracing::instrument(name = "Signup", skip_all, err(Debug))]
 pub async fn signup(
     State(state): State<Arc<AppState>>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError>{
-    // Create a new `User` instance using data in the `request`
-
-    // let email = Email::parse(&request.email).unwrap();
-    // let password = Password::parse(&request.password).unwrap();
 
     // Email validation: Check if it's empty or doesn't contain '@'
     let email = match Email::parse(&request.email) {
