@@ -1,5 +1,5 @@
 use validator::validate_email;
-
+use color_eyre::eyre::{eyre, Result};
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Email(pub String);
 
@@ -8,17 +8,20 @@ impl Email {
     ///
     /// Returns `Ok(Email)` if the string is a valid email address,
     /// and `Err(&'static str)` otherwise.
-    pub fn parse(email_string: &str) -> Result<Self, &'static str> {
+    pub fn parse(email_string: &str) -> Result<Self> {
         if email_string.is_empty() {
-            return Err("Email cannot be empty.");
+            // return Err("Email cannot be empty.");
+            return Err(eyre!("Email cannot be empty."));
         }
 
         if !email_string.contains('@') {
-            return Err("Email must contain an '@' symbol.");
+            // return Err("Email must contain an '@' symbol.");
+            return Err(eyre!("Email must contain an '@' symbol."));
         }
 
         if !validate_email(email_string) {
-            return Err("Invalid email format.");   
+            // return Err("Invalid email format.");   
+            return Err(eyre!("Invalid email format."));
         }
 
         Ok(Email(email_string.to_string()))
@@ -43,25 +46,25 @@ mod tests {
     #[test]
     fn test_parse_empty_email() {
         let email = "";
-        assert_eq!(Email::parse(email), Err("Email cannot be empty."));
+        assert!(Email::parse(email).is_err());
     }
 
     #[test]
     fn test_parse_email_without_at_symbol() {
         let email = "testexample.com";
-        assert_eq!(Email::parse(email), Err("Email must contain an '@' symbol."));
+        assert!(Email::parse(email).is_err());
     }
 
     #[test]
     fn test_parse_invalid_email_format() {
         let email = "test@";
-        assert_eq!(Email::parse(email), Err("Invalid email format."));
+        assert!(Email::parse(email).is_err());
     }
 
     #[test]
     fn test_parse_invalid_email_with_spaces() {
         let email = "test user@example.com";
-        assert_eq!(Email::parse(email), Err("Invalid email format."));
+        assert!(Email::parse(email).is_err());
     }
 
     #[test]

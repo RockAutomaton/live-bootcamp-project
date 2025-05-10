@@ -1,10 +1,9 @@
 use uuid::Uuid;
-
+use color_eyre::eyre::{eyre, Context, Report, Result};
 use crate::domain::User;
 use crate::domain::Password;
 use crate::domain::Email;
 
-use color_eyre::eyre::Report;
 use rand::Rng;
 use thiserror::Error;
 
@@ -44,10 +43,10 @@ pub trait BannedTokenStore {
     async fn check_banned_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum BannedTokenStoreError {
-    BannedTokenError,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
 }
 
 
@@ -67,10 +66,23 @@ pub trait TwoFACodeStore {
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum TwoFACodeStoreError {
+    #[error("Login Attempt ID not found")]
     LoginAttemptIdNotFound,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+// New!
+impl PartialEq for TwoFACodeStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::LoginAttemptIdNotFound, Self::LoginAttemptIdNotFound)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -78,13 +90,12 @@ pub enum TwoFACodeStoreError {
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: &String) -> Result<Self, String> {
-        // Use the `parse_str` function from the `uuid` crate to ensure `id` is a valid UUID
-        Uuid::parse_str(&id)
-            .map_err(|_| "Invalid LoginAttemptId".to_string())
-            .map(|_| LoginAttemptId(id.clone()))
+    pub fn parse(id: String) -> Result<Self> { // Updated!
+        let parsed_id = uuid::Uuid::parse_str(&id).wrap_err("Invalid login attempt id")?; // Updated!
+        Ok(Self(parsed_id.to_string()))
     }
 }
+
 
 impl Default for LoginAttemptId { // Implementing Default for LoginAttemptId to generate a random UUID to use as a default value
     fn default() -> Self {
@@ -106,12 +117,13 @@ impl AsRef<str> for LoginAttemptId { // Implementing AsRef<str> for LoginAttempt
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: &String) -> Result<Self, String> {
-        // Ensure `code` is a valid 6-digit code
-        if code.len() == 6 && code.chars().all(|c| c.is_digit(10)) { // Check if all characters are digits and length is 6
-            Ok(TwoFACode(code.clone()))
+    pub fn parse(code: String) -> Result<Self> { // Updated!
+        let code_as_u32 = code.parse::<u32>().wrap_err("Invalid 2FA code")?; // Updated!
+
+        if (100_000..=999_999).contains(&code_as_u32) {
+            Ok(Self(code))
         } else {
-            Err("Invalid TwoFACode".to_string())
+            Err(eyre!("Invalid 2FA code")) // Updated!
         }
     }
 }

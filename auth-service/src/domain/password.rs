@@ -1,3 +1,4 @@
+use color_eyre::eyre::{eyre, Result};
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Password(pub String);
 
@@ -6,30 +7,30 @@ impl Password {
     ///
     /// Returns `Ok(Password)` if the string is a valid password,
     /// and `Err(&'static str)` otherwise.
-    pub fn parse(password_string: &str) -> Result<Password, &'static str> {
+    pub fn parse(password_string: &str) -> Result<Self> {
         // Length check
         if password_string.len() < 8 {
-            return Err("Password must be at least 8 characters long.");
+            return Err(eyre!("Password must be at least 8 characters long."));
         }
 
         // Check for uppercase
         if !password_string.chars().any(|c| c.is_uppercase()) {
-            return Err("Password must contain at least one uppercase letter.");
+            return Err(eyre!("Password must contain at least one uppercase letter."));
         }
 
         // Check for lowercase
         if !password_string.chars().any(|c| c.is_lowercase()) {
-            return Err("Password must contain at least one lowercase letter.");
+            return Err(eyre!("Password must contain at least one lowercase letter."));
         }
 
         // Check for digit
         if !password_string.chars().any(|c| c.is_numeric()) {
-            return Err("Password must contain at least one digit.");
+            return Err(eyre!("Password must contain at least one digit."));
         }
 
         // Check for special character
         if !password_string.chars().any(|c| !c.is_alphanumeric()) {
-            return Err("Password must contain at least one special character.");
+            return Err(eyre!("Password must contain at least one special character."));
         }
 
         Ok(Password(password_string.to_string()))
@@ -55,31 +56,31 @@ mod tests {
     #[test]
     fn test_password_too_short() {
         let result = Password::parse("Abc12!");
-        assert_eq!(result, Err("Password must be at least 8 characters long."));
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_password_no_uppercase() {
         let result = Password::parse("password123!");
-        assert_eq!(result, Err("Password must contain at least one uppercase letter."));
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_password_no_lowercase() {
         let result = Password::parse("PASSWORD123!");
-        assert_eq!(result, Err("Password must contain at least one lowercase letter."));
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_password_no_digit() {
         let result = Password::parse("PasswordAbc!");
-        assert_eq!(result, Err("Password must contain at least one digit."));
+        assert!(result.is_err());
     }
 
     #[test]
     fn test_password_no_special_char() {
         let result = Password::parse("Password123");
-        assert_eq!(result, Err("Password must contain at least one special character."));
+        assert!(result.is_err());
     }
 
     #[test]

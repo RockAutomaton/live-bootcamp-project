@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
-use axum_extra::extract::{cookie, CookieJar};
-use crate::{app_state::AppState, domain::*};
-
+use axum_extra::extract::CookieJar;
+use crate::app_state::AppState;
+use color_eyre::eyre::Result;
 use crate::{
     domain::AuthAPIError, utils::{auth::validate_token, constants::JWT_COOKIE_NAME}
 };
 
+#[tracing::instrument(name = "Logout", skip_all)]
 pub async fn logout(
     jar: CookieJar,
     State(state): State<Arc<AppState>>,
@@ -35,7 +36,7 @@ pub async fn logout(
         Ok(_) => println!("Token stored in banned store"), // Debug print
         Err(e) => {
             println!("Failed to store token: {:?}", e); // Debug print
-            return (jar, Err(AuthAPIError::UnexpectedError));
+            return (jar, Err(AuthAPIError::UnexpectedError(e.into())));
         }
     } 
     

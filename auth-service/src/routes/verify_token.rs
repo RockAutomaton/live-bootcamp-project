@@ -9,6 +9,7 @@ use crate::{app_state::AppState, domain::*};
 use crate::domain::AuthAPIError;
 use crate::utils::auth::validate_token;
 
+#[tracing::instrument(name = "Verify Token", skip_all)]
 pub async fn verify_token(
     _jar: CookieJar,
     State(state): State<Arc<AppState>>,
