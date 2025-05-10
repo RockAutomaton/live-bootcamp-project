@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use crate::{app_state::AppState, domain::*};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use color_eyre::eyre::{eyre, Context, Result};
 use serde::{Deserialize, Serialize};
 
-#[tracing::instrument(name = "Signup", skip_all, err(Debug))]
+#[tracing::instrument(name = "Signup", skip_all)]
 pub async fn signup(
     State(state): State<Arc<AppState>>,
     Json(request): Json<SignupRequest>,
@@ -33,7 +34,7 @@ pub async fn signup(
 
     match user_store.add_user(user).await {
         Ok(_) => {}
-        Err(_) => return Err(AuthAPIError::UnexpectedError)
+        Err(e) => return Err(AuthAPIError::UnexpectedError(e.into()))
     }
 
     let response = Json(SignupResponse {
