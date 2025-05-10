@@ -3,7 +3,7 @@ use crate::domain::Email;
 use crate::domain::Password;
 use crate::domain::User;
 use crate::domain::data_stores::*;
-
+use secrecy::Secret;
 
 
 #[derive(Default)]
@@ -56,11 +56,12 @@ mod tests {
     use crate::domain::User;
     use crate::domain::Email;
     use crate::domain::Password;
+    use secrecy::Secret;
 
     #[tokio::test]
     async fn test_add_user() {
         let mut store = HashmapUserStore::default();
-        let user = User::new(Email("test@example.com".to_string()), Password("password123".to_string()), true );
+        let user = User::new(Email::parse(Secret::new("test@example.com".to_string())).unwrap(), Password::parse(Secret::new("Password123!".to_string())).unwrap(), true );
 
         // Test adding a new user
         let result = store.add_user(user.clone());
@@ -74,19 +75,19 @@ mod tests {
     #[tokio::test]
     async fn test_get_user() {
         let mut store = HashmapUserStore::default();
-        let user = User::new(Email("test@example.com".to_string()), Password("password123".to_string()), true );
+        let user = User::new(Email::parse(Secret::new("test@example.com".to_string())).unwrap(), Password::parse(Secret::new("Password123!".to_string())).unwrap(), true );
 
 
         // Add a user first
         let _ = store.add_user(user.clone()).await;
 
         // Test getting an existing user
-        let result = store.get_user(&Email("test@example.com".to_string())).await;
+        let result = store.get_user(&Email::parse(Secret::new("test@example.com".to_string())).unwrap()).await;
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().email, Email("test@example.com".to_string()));
+        assert_eq!(result.unwrap().email, Email::parse(Secret::new("test@example.com".to_string())).unwrap());
 
         // Test getting a non-existent user
-        let result = store.get_user(&Email("nonexistent@example.com".to_string())).await;
+        let result = store.get_user(&Email::parse(Secret::new("nonexistent@example.com".to_string())).unwrap()).await;
         assert_eq!(result, Err(UserStoreError::UserNotFound));
     }
 
@@ -94,8 +95,8 @@ mod tests {
     async fn test_validate_user() {
         let mut store = HashmapUserStore::default();
         let user = User {
-            email: Email("test@example.com".to_string()),
-            password: Password("password123".to_string()),
+            email: Email::parse(Secret::new("test@example.com".to_string())).unwrap(),
+            password: Password(Secret::new("Password123!".to_string())),
             requires_2fa: true
         };
 
@@ -103,15 +104,15 @@ mod tests {
         let _ = store.add_user(user).await;
 
         // Test with correct credentials
-        let result = store.validate_user(&Email("test@example.com".to_string()), &Password("password123".to_string())).await;
+        let result = store.validate_user(&Email::parse(Secret::new("test@example.com".to_string())).unwrap(), &Password::parse(Secret::new("Password123!".to_string())).unwrap()).await;
         assert!(result.is_ok());
 
         // Test with incorrect password
-        let result = store.validate_user(&Email("test@example.com".to_string()), &Password("wrongpassword".to_string())).await;
+        let result = store.validate_user(&Email::parse(Secret::new("test@example.com".to_string())).unwrap(), &Password::parse(Secret::new("Password123!!".to_string())).unwrap()).await;
         assert_eq!(result, Err(UserStoreError::InvalidCredentials));
 
         // Test with non-existent user
-        let result = store.validate_user(&Email("nonexistent@example.com".to_string()), &Password("password123".to_string())).await;
+        let result = store.validate_user(&Email::parse(Secret::new("nonexistent@example.com".to_string())).unwrap(), &Password::parse(Secret::new("Password123!".to_string())).unwrap()).await;
         assert_eq!(result, Err(UserStoreError::UserNotFound));
     }
 }

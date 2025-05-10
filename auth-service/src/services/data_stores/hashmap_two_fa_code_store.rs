@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+use secrecy::Secret;
 use crate::domain::{
     data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
     email::Email,
@@ -46,7 +46,7 @@ mod tests {
     #[tokio::test]
     async fn test_add_code() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse("test@email.net").unwrap();
+        let email = Email::parse(Secret::new("test@email.net".to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::parse("123456".to_string()).unwrap();
         store
@@ -61,7 +61,7 @@ mod tests {
     #[tokio::test]
     async fn test_remove_code() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(&"remove@email.net".to_string()).unwrap();
+        let email = Email::parse(Secret::new("remove@email.net".to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::parse("654321".to_string()).unwrap();
         store
@@ -76,7 +76,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_code_nonexistent_email() {
         let store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(&"nonexistent@email.net".to_string()).unwrap();
+        let email = Email::parse(Secret::new("nonexistent@email.net".to_string())).unwrap();
         let result = store.get_code(&email).await;
         assert!(matches!(result, Err(TwoFACodeStoreError::LoginAttemptIdNotFound)));
     }
@@ -84,7 +84,7 @@ mod tests {
     #[tokio::test]
     async fn test_overwrite_code() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(&"overwrite@email.net".to_string()).unwrap();
+        let email = Email::parse(Secret::new("overwrite@email.net".to_string())).unwrap();
         let login_attempt_id1 = LoginAttemptId::default();
         let code1 = TwoFACode::parse("111111".to_string()).unwrap();
         store
@@ -107,7 +107,7 @@ mod tests {
     #[tokio::test]
     async fn test_remove_code_nonexistent_email() {
         let mut store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(&"doesnotexist@email.net".to_string()).unwrap();
+        let email = Email::parse(Secret::new("doesnotexist@email.net".to_string())).unwrap();
         // Should not error even if email does not exist
         let result = store.remove_code(&email).await;
         assert!(result.is_ok());

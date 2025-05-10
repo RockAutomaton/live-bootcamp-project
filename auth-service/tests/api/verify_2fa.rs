@@ -2,7 +2,7 @@ use auth_service::{
     domain::Email,
     routes::TwoFactorAuthResponse,
 };
-
+use secrecy::{ExposeSecret, Secret};
 
 use crate::helpers::{get_random_email, TestApp};
 
@@ -82,10 +82,10 @@ async fn should_return_401_if_incorrect_credentials() {
 async fn should_return_401_if_old_code() {
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail. 
     let mut app = TestApp::new().await;
-    let email: Email = Email::parse(get_random_email().as_ref()).unwrap();
+    let email: Email = Email::parse(Secret::new(get_random_email())).unwrap();
     let password = "Password123!";
     let login_body = serde_json::json!({
-        "email": &email.0,
+        "email": &email.as_ref().expose_secret(),
         "password": password,
         "requires2FA": true
     });
@@ -102,7 +102,7 @@ async fn should_return_401_if_old_code() {
 
     app.post_login(&login_body).await;
     let body = serde_json::json!({
-        "email": &email.0,
+        "email": &email.as_ref().expose_secret(),
         "loginAttemptId": login_attempt_id,
         "2FACode": code.as_ref()
     });
@@ -115,10 +115,10 @@ async fn should_return_401_if_old_code() {
 async fn should_return_401_if_same_code_twice() {    
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail. 
     let mut app = TestApp::new().await;
-    let email: Email = Email::parse(get_random_email().as_ref()).unwrap();
+    let email: Email = Email::parse(Secret::new(get_random_email())).unwrap();
     let password = "Password123!";
     let login_body = serde_json::json!({
-        "email": &email.0,
+        "email": &email.as_ref().expose_secret(),
         "password": password,
         "requires2FA": true
     });
@@ -131,7 +131,7 @@ async fn should_return_401_if_same_code_twice() {
         .login_attempt_id;
     let code = app.two_fa_code_store.read().await.get_code(&email.clone()).await.unwrap().1;
     let body = serde_json::json!({
-        "email": &email.0,
+        "email": &email.as_ref().expose_secret(),
         "loginAttemptId": login_attempt_id,
         "2FACode": code.as_ref()
     });

@@ -4,6 +4,7 @@ use redis::{Commands, Connection};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use color_eyre::eyre::Context;
+use secrecy::{ExposeSecret, Secret};
 
 use crate::domain::{
     data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
@@ -78,5 +79,5 @@ const TEN_MINUTES_IN_SECONDS: u64 = 600;
 const TWO_FA_CODE_PREFIX: &str = "two_fa_code:";
 
 fn get_key(email: &Email) -> String {
-    format!("{}{}", TWO_FA_CODE_PREFIX, email.as_ref())
-}
+    format!("{}{}", TWO_FA_CODE_PREFIX, email.as_ref().expose_secret())
+}   

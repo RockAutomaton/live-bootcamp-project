@@ -4,6 +4,7 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 use serde::Serialize;
+use secrecy::Secret;
 
 use crate::{
     app_state::AppState,
@@ -17,12 +18,12 @@ pub async fn login(
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
-    let password = match Password::parse(&request.password) {
+    let password = match Password::parse(request.password) {
         Ok(password) => password,
         Err(_) => return (jar, Err(AuthAPIError::InvalidCredentials)),
     };
 
-    let email = match Email::parse(&request.email) {
+    let email = match Email::parse(Secret::new(request.email)) {
         Ok(email) => email,
         Err(_) => return (jar, Err(AuthAPIError::InvalidCredentials)),
     };
@@ -111,7 +112,7 @@ async fn handle_no_2fa(
 #[derive(Deserialize)]
 pub struct LoginRequest {
     email: String,
-    password: String,
+    password: Secret<String>,
 }
 
 #[derive(Debug, Serialize)]

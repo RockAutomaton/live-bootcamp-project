@@ -5,7 +5,7 @@ use auth_service::{
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
 };
-
+use secrecy::Secret;
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
     let mut app = TestApp::new().await;
@@ -160,7 +160,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(&random_email).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email)).unwrap())
         .await
         .expect("Failed to get code from store");
 

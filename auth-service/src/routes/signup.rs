@@ -4,7 +4,7 @@ use crate::{app_state::AppState, domain::*};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use color_eyre::eyre::Result;
 use serde::{Deserialize, Serialize};
-
+use secrecy::Secret;
 #[tracing::instrument(name = "Signup", skip_all)]
 pub async fn signup(
     State(state): State<Arc<AppState>>,
@@ -12,13 +12,13 @@ pub async fn signup(
 ) -> Result<impl IntoResponse, AuthAPIError>{
 
     // Email validation: Check if it's empty or doesn't contain '@'
-    let email = match Email::parse(&request.email) {
+    let email = match Email::parse(Secret::new(request.email)) {
         Ok(email) => email,
         Err(_) => return Err(AuthAPIError::InvalidCredentials),
     };
 
     // Password validation: Check if it's less than 8 characters
-    let password= match Password::parse(&request.password) {
+    let password= match Password::parse(request.password) {
         Ok(password) => password,
         Err(_) => return Err(AuthAPIError::InvalidCredentials)
     };
@@ -47,7 +47,7 @@ pub async fn signup(
 #[derive(Deserialize)]
 pub struct SignupRequest {
     pub email: String,
-    pub password: String,
+    pub password: Secret<String>,
     #[serde(rename = "requires2FA")]
     pub requires_2fa: bool,
 }

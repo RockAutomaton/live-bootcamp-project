@@ -4,7 +4,7 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use color_eyre::eyre::{eyre, Context, ContextCompat, Result};
 use crate::{app_state::BannedTokenStoreType, domain::email::Email};
-
+use secrecy::{ExposeSecret, Secret};
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
 #[tracing::instrument(name = "Generate Auth Cookie", skip_all)]
@@ -42,7 +42,7 @@ fn generate_auth_token(email: &Email) -> Result<String> {
         exp
     ))?;
 
-    let sub = email.as_ref().to_owned();
+    let sub = email.as_ref().expose_secret().to_owned();
 
     let claims = Claims { sub, exp };
 
@@ -106,7 +106,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_auth_cookie() {
-        let email = Email::parse("test@example.com").unwrap();
+        let email = Email::parse(Secret::new("test@example.com".to_string())).unwrap();
         let cookie = generate_auth_cookie(&email).unwrap();
         assert_eq!(cookie.name(), JWT_COOKIE_NAME);
         assert_eq!(cookie.value().split('.').count(), 3);
@@ -128,14 +128,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_auth_token() {
-        let email = Email::parse("test@example.com").unwrap();
+        let email = Email::parse(Secret::new("test@example.com".to_string())).unwrap();
         let result = generate_auth_token(&email).unwrap();
         assert_eq!(result.split('.').count(), 3);
     }
 
     #[tokio::test]
     async fn test_validate_token_with_valid_token() {
-        let email = Email::parse(&"test@example.com").unwrap();
+        let email = Email::parse(Secret::new("test@example.com".to_string())).unwrap();
         let token = generate_auth_token(&email).unwrap();
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let result = validate_token(&token, banned_token_store).await.unwrap();
