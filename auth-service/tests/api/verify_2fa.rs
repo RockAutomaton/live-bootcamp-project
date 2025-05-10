@@ -1,7 +1,6 @@
 use auth_service::{
-    domain::{Email, LoginAttemptId, TwoFACode, TwoFACodeStore},
+    domain::Email,
     routes::TwoFactorAuthResponse,
-    ErrorResponse,
 };
 
 

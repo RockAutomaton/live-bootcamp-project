@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{app_state::AppState, domain::*};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use color_eyre::eyre::{eyre, Context, Result};
+use color_eyre::eyre::Result;
 use serde::{Deserialize, Serialize};
 
 #[tracing::instrument(name = "Signup", skip_all)]

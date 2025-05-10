@@ -4,7 +4,6 @@ use crate::domain::User;
 use crate::domain::Password;
 use crate::domain::Email;
 
-use rand::Rng;
 use thiserror::Error;
 
 #[async_trait::async_trait]

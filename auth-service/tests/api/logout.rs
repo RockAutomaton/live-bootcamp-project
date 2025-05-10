@@ -1,7 +1,6 @@
 use crate::helpers::{get_random_email, TestApp};
 
-use auth_service::{app_state::{self, AppState}, utils::constants::JWT_COOKIE_NAME, ErrorResponse};
-use axum::body;
+use auth_service::utils::constants::JWT_COOKIE_NAME;
 use reqwest::Url;
 use serde_json::json;
 

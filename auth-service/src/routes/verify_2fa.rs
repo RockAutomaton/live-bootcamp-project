@@ -1,10 +1,8 @@
 use axum::extract::State;
 use axum::{http::StatusCode, response::IntoResponse, Json};
-use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 use std::sync::Arc;
-use color_eyre::eyre::{eyre, Context, Result};
 use crate::{
     app_state::AppState,
     domain::{AuthAPIError, Email, LoginAttemptId, TwoFACode},
