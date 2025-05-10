@@ -1,9 +1,10 @@
 use std::collections::HashMap;
-use secrecy::Secret;
 use crate::domain::{
     data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
     email::Email,
 };
+
+use secrecy::{ExposeSecret, Secret};
 
 #[derive(Default)]
 pub struct HashmapTwoFACodeStore {
@@ -42,6 +43,7 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
 mod tests {
     use super::*;
     use crate::domain::email::Email;
+    use secrecy::{ExposeSecret, Secret};
 
     #[tokio::test]
     async fn test_add_code() {

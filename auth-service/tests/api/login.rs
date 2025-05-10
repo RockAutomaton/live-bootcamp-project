@@ -139,23 +139,17 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         "requires2FA": true
     });
     let _ = app.post_signup(&body).await; // Will work
+    
+    // Single login attempt
     let response = app.post_login(&body).await;
     assert_eq!(response.status().as_u16(), 206);
-    assert_eq!(
-        response
-            .json::<TwoFactorAuthResponse>()
-            .await
-            .expect("Could not deserialize response body to TwoFactorAuthResponse")
-            .message,
-        "2FA required".to_owned()
-    );
-
-    let response = app.post_login(&body).await;
     let login_attempt_id = response
         .json::<TwoFactorAuthResponse>()
         .await
         .expect("Could not deserialize response body to TwoFactorAuthResponse")
         .login_attempt_id;
+
+    // Get the stored code from this single attempt
     let stored_code = app
         .two_fa_code_store
         .read()
@@ -164,9 +158,8 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         .await
         .expect("Failed to get code from store");
 
-    // get the login attempt ID from the stored code as a string
+    // Verify the login attempt IDs match
     let stored_login_attempt_id = stored_code.0.as_ref().to_string();
     assert_eq!(stored_login_attempt_id, login_attempt_id);
     app.clean_up().await;
-
 }

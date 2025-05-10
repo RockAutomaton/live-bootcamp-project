@@ -7,7 +7,7 @@ use color_eyre::eyre::Result;
 use crate::{
     domain::AuthAPIError, utils::{auth::validate_token, constants::JWT_COOKIE_NAME}
 };
-
+use secrecy::Secret;
 #[tracing::instrument(name = "Logout", skip_all)]
 pub async fn logout(
     jar: CookieJar,
@@ -32,7 +32,7 @@ pub async fn logout(
         Err(_) => return (jar, Err(AuthAPIError::InvalidToken)),
     }
 
-    match state.banned_token_store.write().await.store_token(token.to_owned()).await  {
+    match state.banned_token_store.write().await.store_token(Secret::new(token.to_owned())).await  {
         Ok(_) => println!("Token stored in banned store"), // Debug print
         Err(e) => {
             println!("Failed to store token: {:?}", e); // Debug print

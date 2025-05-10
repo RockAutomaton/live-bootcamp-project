@@ -3,6 +3,7 @@ use color_eyre::eyre::{eyre, Context, Report, Result};
 use crate::domain::User;
 use crate::domain::Password;
 use crate::domain::Email;
+use secrecy::{ExposeSecret, Secret};
 
 use thiserror::Error;
 
@@ -38,8 +39,8 @@ impl PartialEq for UserStoreError {
 }
 #[async_trait::async_trait]
 pub trait BannedTokenStore {
-    async fn store_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
-    async fn check_banned_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn store_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError>;
+    async fn check_banned_token(&self, token: &Secret<String>) -> Result<bool, BannedTokenStoreError>;
 }
 
 #[derive(Debug, Error)]
@@ -112,15 +113,15 @@ impl AsRef<str> for LoginAttemptId { // Implementing AsRef<str> for LoginAttempt
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TwoFACode(String);
+#[derive(Clone, Debug)]
+pub struct TwoFACode(Secret<String>);
 
 impl TwoFACode {
     pub fn parse(code: String) -> Result<Self> { // Updated!
         let code_as_u32 = code.parse::<u32>().wrap_err("Invalid 2FA code")?; // Updated!
 
         if (100_000..=999_999).contains(&code_as_u32) {
-            Ok(Self(code))
+            Ok(Self(Secret::new(code)))
         } else {
             Err(eyre!("Invalid 2FA code")) // Updated!
         }
@@ -133,13 +134,19 @@ impl Default for TwoFACode {
         // The code should be 6 digits (ex: 834629)
         let code = rand::random::<u32>() % 1_000_000; // Generate a random number between 0 and 999999
         let code_str = format!("{:06}", code); // Format it as a 6-digit string
-        TwoFACode(code_str) // Return the 6-digit code
+        TwoFACode(Secret::new(code_str)) // Return the 6-digit code
+    }
+}
+
+impl PartialEq for TwoFACode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
     }
 }
 
 // Implementing AsRef<str> for TwoFACode to allow easy conversion to &str
 impl AsRef<str> for TwoFACode {
     fn as_ref(&self) -> &str {
-        &self.0
+        &self.0.expose_secret()
     }
 }
